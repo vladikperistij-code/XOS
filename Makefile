@@ -1,70 +1,77 @@
-# ==========================================
-# XTechnologies - XOS Build System v0.3
-# ==========================================
-
-# Інструменти
+# Налаштування інструментів
 CC = gcc
 AS = nasm
 LD = ld
 
-# Папки
-BOOT_DIR = boot
-KERNEL_DIR = kernel
-DRIVERS_DIR = kernel/drivers
-BIN_DIR = bin
-
-# Прапорці компиляції
-CFLAGS = -m32 -ffreestanding -fno-stack-protector -fno-pic -nostdlib -Ikernel -w -c
+# Прапорці компиляції (32-біт, без стандартних ліб, інклюд ядра)
+CFLAGS = -m32 -ffreestanding -fno-stack-protector -fno-pic -nostdlib -Ikernel -Ixfs -w -c
 LDFLAGS = -m elf_i386 -Ttext 0x1000 --entry main --oformat binary
 
-# Список усіх об'єктних файлів ядра
-OBJ = $(BIN_DIR)/kernel.o \
-      $(BIN_DIR)/gui.o \
-      $(BIN_DIR)/time.o \
-      $(BIN_DIR)/keyboard.o \
-      $(BIN_DIR)/power.o
+# Папки проєкту
+BIN = bin
+KDIR = kernel
+DDIR = kernel/drivers
+XDIR = xfs
+BDIR = boot
 
-# Головна ціль
-all: $(BIN_DIR)/xos.bin
+# Список усіх об'єктних файлів
+OBJ = $(BIN)/kernel.o \
+      $(BIN)/gui.o \
+      $(BIN)/time.o \
+      $(BIN)/keyboard.o \
+      $(BIN)/power.o \
+      $(BIN)/xfs.o \
+      $(BIN)/ata.o
 
-# Створення папки bin
-$(BIN_DIR):
-	mkdir -p $(BIN_DIR)
 
-# 1. Завантажувач
-$(BIN_DIR)/boot.bin: $(BOOT_DIR)/boot.asm | $(BIN_DIR)
-	$(AS) -f bin $(BOOT_DIR)/boot.asm -o $(BIN_DIR)/boot.bin
+run: $(BIN)/xos.bin
+	qemu-system-i386 -m 256M -drive format=raw,file=bin/xos.bin,index=0,media=disk
 
-# 2. Основні модулі ядра
-$(BIN_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c | $(BIN_DIR)
-	$(CC) $(CFLAGS) $(KERNEL_DIR)/kernel.c -o $(BIN_DIR)/kernel.o
+# Головна команда для термінала
+all: clean $(BIN)/xos.bin run
 
-$(BIN_DIR)/gui.o: $(KERNEL_DIR)/gui.c | $(BIN_DIR)
-	$(CC) $(CFLAGS) $(KERNEL_DIR)/gui.c -o $(BIN_DIR)/gui.o
+# Складання фінального образу ОС
+$(BIN)/xos.bin: $(BIN)/boot.bin $(BIN)/kernel.bin
+	cat $(BIN)/boot.bin $(BIN)/kernel.bin > $(BIN)/xos.bin
+	# Робимо образ достатнього розміру для тестів файлової системи (1МБ)
+	truncate -s 1M $(BIN)/xos.bin
 
-$(BIN_DIR)/time.o: $(KERNEL_DIR)/time.c | $(BIN_DIR)
-	$(CC) $(CFLAGS) $(KERNEL_DIR)/time.c -o $(BIN_DIR)/time.o
+# Bootloader (asm)
+$(BIN)/boot.bin: $(BDIR)/boot.asm
+	mkdir -p $(BIN)
+	$(AS) -f bin $< -o $@
 
-# 3. Драйвери (Keyboard та Power)
-$(BIN_DIR)/keyboard.o: $(DRIVERS_DIR)/keyboard.c | $(BIN_DIR)
-	$(CC) $(CFLAGS) $(DRIVERS_DIR)/keyboard.c -o $(BIN_DIR)/keyboard.o
+# Лінковка ядра (всі .o файли в один .bin)
+$(BIN)/kernel.bin: $(OBJ)
+	$(LD) $(LDFLAGS) $(OBJ) -o $@
 
-$(BIN_DIR)/power.o: $(DRIVERS_DIR)/power.c | $(BIN_DIR)
-	$(CC) $(CFLAGS) $(DRIVERS_DIR)/power.c -o $(BIN_DIR)/power.o
+# --- Компіляція модулів ядра ---
+$(BIN)/kernel.o: $(KDIR)/kernel.c
+	$(CC) $(CFLAGS) $< -o $@
 
-# 4. Лінкування ядра
-$(BIN_DIR)/kernel.bin: $(OBJ)
-	$(LD) $(LDFLAGS) $(OBJ) -o $(BIN_DIR)/kernel.bin
+$(BIN)/gui.o: $(KDIR)/gui.c
+	$(CC) $(CFLAGS) $< -o $@
 
-# 5. Фінальний образ ОС
-$(BIN_DIR)/xos.bin: $(BIN_DIR)/boot.bin $(BIN_DIR)/kernel.bin
-	cat $(BIN_DIR)/boot.bin $(BIN_DIR)/kernel.bin > $(BIN_DIR)/xos.bin
-	truncate -s +64k $(BIN_DIR)/xos.bin
+$(BIN)/time.o: $(KDIR)/time.c
+	$(CC) $(CFLAGS) $< -o $@
 
-# Команда запуску
-run: all
-	qemu-system-i386 -machine pc -m 256M -drive format=raw,file=$(BIN_DIR)/xos.bin
+# --- Компіляція драйверів ---
+$(BIN)/keyboard.o: $(DDIR)/keyboard.c
+	$(CC) $(CFLAGS) $< -o $@
 
-# Очищення
+$(BIN)/power.o: $(DDIR)/power.c
+	$(CC) $(CFLAGS) $< -o $@
+
+# --- Компіляція XFS (у папці xfs/) ---
+$(BIN)/xfs.o: $(XDIR)/xfs.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BIN)/ata.o: $(XDIR)/ata.c
+	$(CC) $(CFLAGS) $< -o $@
+
+# Очищення проекту
 clean:
-	rm -rf $(BIN_DIR)
+	rm -rf $(BIN)
+
+# Швидкий перезапуск без очищення
+rerun: $(BIN)/xos.bin run

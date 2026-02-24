@@ -5,7 +5,11 @@ KERNEL_OFFSET equ 0x1000
 start:
     mov [BOOT_DRIVE], dl
     
-    ; Вивід "XOS"
+    ; Налаштування стеку для 16-бітного режиму
+    mov bp, 0x9000
+    mov sp, bp
+
+    ; Вивід "XOS" - знак того, що Bootloader живий
     mov ah, 0x0e
     mov al, 'X'
     int 0x10
@@ -14,25 +18,13 @@ start:
     mov al, 'S'
     int 0x10
 
+    ; ЗАВАНТАЖЕННЯ ЯДРА (Збільшуємо кількість секторів!)
     mov bx, KERNEL_OFFSET
-    mov dh, 15
+    mov dh, 50          ; Читаємо 50 секторів (25 КБ). Цього вистачить для XFS та ATA
     mov dl, [BOOT_DRIVE]
     call disk_load
 
-    ; ДОДАЙ ЦЕ ДЛЯ ТЕСТУ:
-    mov ah, 0x0e
-    mov al, 'D'
-    int 0x10
-
-    call switch_to_pm
-
-    ; Завантаження ядра
-    mov bx, KERNEL_OFFSET
-    mov dh, 15
-    mov dl, [BOOT_DRIVE]
-    call disk_load
-
-    ; Перехід
+    ; ПЕРЕХІД У PROTECTED MODE
     call switch_to_pm
     jmp $
 
@@ -42,6 +34,18 @@ start:
 
 [bits 32]
 BEGIN_PM:
+    ; НАЛАШТУВАННЯ СЕГМЕНТІВ ТА СТЕКУ (Це лікує чорний екран!)
+    mov ax, 0x10        ; Data segment зміщення в GDT
+    mov ds, ax
+    mov ss, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+    mov ebp, 0x90000    ; Піднімаємо стек високо в пам'ять
+    mov esp, ebp
+
+    ; ВИКЛИК ЯДРА
     call KERNEL_OFFSET
     jmp $
 

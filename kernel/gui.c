@@ -101,3 +101,19 @@ int strlen(char* s) {
     while (s[i]) i++;
     return i;
 }
+
+void kprint_int(int n) {
+    if (n == 0) {
+        print_char('0');
+        return;
+    }
+    char s[12]; // Буфер для числа
+    int i = 0;
+    while (n > 0) {
+        s[i++] = (n % 10) + '0';
+        n /= 10;
+    }
+    while (--i >= 0) {
+        print_char(s[i]);
+    }
+}
