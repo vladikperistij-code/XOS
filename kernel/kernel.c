@@ -8,10 +8,10 @@ void main() {
     int h, m, s;
 
     xfs_init();
-    xfs_load(); // Тепер це безпечно!
+    xfs_load();
 
     clear_screen();
-    kprint_color("XOS Kernel v0.3.5 [XTechnologies]\n", 0x0E);
+    kprint_color("XOS Kernel v1.0 [XTechnologies]\n", 0x0E);
 
     while(1) {
         kprint_color("admin@xos >> ", 0x0C);
@@ -96,3 +96,4 @@ void main() {
         }
     }
 }
+
