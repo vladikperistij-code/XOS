@@ -1,20 +1,14 @@
-
 # XOS 1.0
 
 A lightweight operating system project.
 
 ## Overview
 
-XOS 1.0 is a minimal operating system implementation designed for learning and development purposes.
+XOS 0.3 is a minimal operating system by xtechnologies.
 
 ## Features
 
-- Basic kernel functionality
-- Process management
-- Memory management
-- File system support
-
-## Getting Started
+- minimal kernel functionality
 
 ### Prerequisites
 
@@ -24,10 +18,7 @@ XOS 1.0 is a minimal operating system implementation designed for learning and d
 
 ### Building & running
 
-## Documentation
-
-See `/docs` for detailed documentation.
-
-## Contributing
-
-Contributions are welcome. Please follow the coding standards.
+bash:
+  ------------------------
+  |make clean && make run|
+  ------------------------
