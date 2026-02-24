@@ -10,8 +10,9 @@ XOS 0.3 is a minimal operating system by xtechnologies.
 
 - minimal kernel functionality
 
-### Building & running
+### Building
 bash:
   ------------------------
   make clean && make run
   ------------------------
+
