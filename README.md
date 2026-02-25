@@ -10,6 +10,7 @@ XOS 1.0 is a minimal operating system by xtechnologies.
 
 - minimal kernel functionality
 - file operation
+- minimal programs
 
 ### Building
 bash:
