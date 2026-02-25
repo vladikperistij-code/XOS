@@ -1,77 +1,83 @@
-# Налаштування інструментів
+# ==============================================================================
+# 🚀 XOS v1.3 Professional Makefile [XTechnologies]
+# ==============================================================================
+
+# Інструменти
 CC = gcc
 AS = nasm
 LD = ld
 
-# Прапорці компиляції (32-біт, без стандартних ліб, інклюд ядра)
-CFLAGS = -m32 -ffreestanding -fno-stack-protector -fno-pic -nostdlib -Ikernel -Ixfs -w -c
+# Налаштування компіляції (32-біт, без ліб, інклюди для всіх папок)
+CFLAGS = -m32 -ffreestanding -fno-stack-protector -fno-pic -nostdlib -Ikernel -Ixfs -Iapps -w -c
 LDFLAGS = -m elf_i386 -Ttext 0x1000 --entry main --oformat binary
 
-# Папки проєкту
+# Папки
 BIN = bin
 KDIR = kernel
 DDIR = kernel/drivers
 XDIR = xfs
+ADIR = apps
 BDIR = boot
 
-# Список усіх об'єктних файлів
-OBJ = $(BIN)/kernel.o \
-      $(BIN)/gui.o \
-      $(BIN)/time.o \
-      $(BIN)/keyboard.o \
-      $(BIN)/power.o \
-      $(BIN)/xfs.o \
-      $(BIN)/ata.o
+# Об'єктні файли (kernel.o має бути першим!)
+OBJ = $(BIN)/kernel.o $(BIN)/gui.o $(BIN)/time.o $(BIN)/keyboard.o \
+      $(BIN)/power.o $(BIN)/xfs.o $(BIN)/ata.o \
+      $(BIN)/xeditor.o $(BIN)/xrun.o $(BIN)/xstat.o $(BIN)/xcalc.o
 
+# Резервуємо 128 секторів (64КБ) для образу
+FULL_SIZE = 65536
 
-run: $(BIN)/xos.bin
-	qemu-system-i386 -m 256M -drive format=raw,file=bin/xos.bin,index=0,media=disk
+# ------------------------------------------------------------------------------
+# ЦІЛІ (TARGETS)
+# ------------------------------------------------------------------------------
 
-# Головна команда для термінала
-all: clean $(BIN)/xos.bin run
+# Головна команда: спочатку збірка, потім запуск
+all: build run
 
-# Складання фінального образу ОС
+# Очищення та повна перезбірка
+clean_all: clean build run
+
+# Створення образу диска
+build: $(BIN)/xos.bin
+	@echo "--- [BUILD COMPLETE] ---"
+
 $(BIN)/xos.bin: $(BIN)/boot.bin $(BIN)/kernel.bin
+	@echo "--- [CREATING XOS.BIN] ---"
 	cat $(BIN)/boot.bin $(BIN)/kernel.bin > $(BIN)/xos.bin
-	# Робимо образ достатнього розміру для тестів файлової системи (1МБ)
-	truncate -s 1M $(BIN)/xos.bin
+	truncate -s $(FULL_SIZE) $(BIN)/xos.bin
 
-# Bootloader (asm)
+# Запуск в QEMU з підтримкою звуку (сумісно з Windows/WSL)
+run: $(BIN)/xos.bin
+	@echo "--- [STARTING QEMU] ---"
+	qemu-system-i386 -machine pc,pcspk-audiodev=snd0 -m 256M \
+	-drive format=raw,file=$(BIN)/xos.bin,index=0,if=ide \
+	-audiodev $(shell (qemu-system-i386 -audiodev help | grep -q dsound && echo dsound) || echo sdl),id=snd0
+
+# --- ПРАВИЛА ЗБІРКИ ---
+
 $(BIN)/boot.bin: $(BDIR)/boot.asm
-	mkdir -p $(BIN)
+	@mkdir -p $(BIN)
 	$(AS) -f bin $< -o $@
 
-# Лінковка ядра (всі .o файли в один .bin)
 $(BIN)/kernel.bin: $(OBJ)
 	$(LD) $(LDFLAGS) $(OBJ) -o $@
 
-# --- Компіляція модулів ядра ---
-$(BIN)/kernel.o: $(KDIR)/kernel.c
+# Універсальні правила для .c файлів
+$(BIN)/%.o: $(KDIR)/%.c
+	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) $< -o $@
 
-$(BIN)/gui.o: $(KDIR)/gui.c
+$(BIN)/%.o: $(DDIR)/%.c
+	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) $< -o $@
 
-$(BIN)/time.o: $(KDIR)/time.c
+$(BIN)/%.o: $(XDIR)/%.c
+	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) $< -o $@
 
-# --- Компіляція драйверів ---
-$(BIN)/keyboard.o: $(DDIR)/keyboard.c
+$(BIN)/%.o: $(ADIR)/%.c
+	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) $< -o $@
 
-$(BIN)/power.o: $(DDIR)/power.c
-	$(CC) $(CFLAGS) $< -o $@
-
-# --- Компіляція XFS (у папці xfs/) ---
-$(BIN)/xfs.o: $(XDIR)/xfs.c
-	$(CC) $(CFLAGS) $< -o $@
-
-$(BIN)/ata.o: $(XDIR)/ata.c
-	$(CC) $(CFLAGS) $< -o $@
-
-# Очищення проекту
 clean:
 	rm -rf $(BIN)
-
-# Швидкий перезапуск без очищення
-rerun: $(BIN)/xos.bin run

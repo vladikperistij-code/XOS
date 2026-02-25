@@ -15,4 +15,19 @@ static inline void __attribute__((always_inline)) outw(unsigned short port, unsi
     __asm__ volatile ("outw %w0, %w1" : : "a"(data), "Nd"(port));
 }
 
+// ... твої існуючі inb, outb, outw ...
+static inline void play_sound(unsigned int nFrequence) {
+    unsigned int Div = 1193180 / nFrequence;
+    outb(0x43, 0xb6);
+    outb(0x42, (unsigned char) (Div) );
+    outb(0x42, (unsigned char) (Div >> 8));
+    unsigned char tmp = inb(0x61);
+    if (tmp != (tmp | 3)) outb(0x61, tmp | 3);
+}
+
+static inline void nosound() {
+    unsigned char tmp = inb(0x61) & 0xFC;
+    outb(0x61, tmp);
+}
+
 #endif

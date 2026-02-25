@@ -11,7 +11,7 @@ void sys_shutdown() {
     kprint("Shutting down...\n");
     __asm__ volatile("cli");
 
-    // ACPI shutdown для QEMU
+    // ACPI shutdown
     outw(0x604, 0x2000);  
     outw(0xB004, 0x2000); 
 

@@ -2,6 +2,7 @@
 #include "time.h"
 #include "../xfs/xfs.h"
 #include "power.h"
+#include "../apps/xstat.h"
 
 void main() {
     char buf[128];
@@ -11,7 +12,7 @@ void main() {
     xfs_load();
 
     clear_screen();
-    kprint_color("XOS Kernel v1.0 [XTechnologies]\n", 0x0E);
+    kprint_color("XOS Kernel v1.4 [XTechnologies]\n", 0x0E);
 
     while(1) {
         kprint_color("admin@xos >> ", 0x0C);
@@ -25,7 +26,7 @@ void main() {
             char fname[32];
             kinput(fname);
             if (xfs_create(fname) != -1) {
-                xfs_sync(); // Спробуємо записати на диск
+                xfs_sync();
                 kprint("File created.\n");
             }
         }
@@ -78,22 +79,37 @@ void main() {
                 kprint("File not found.\n");
             }
         }
+        else if (strcmp(buf, "edit") == 0) {
+            kprint("File to edit: ");
+            char fname[32];
+            kinput(fname);
+            xeditor_main(fname);
+        }
+        else if (strcmp(buf, "run") == 0) {
+            kprint("Script name: ");
+            char fname[32];
+            kinput(fname);
+            xrun_main(fname);
+        }
+        else if (strcmp(buf, "stat") == 0) {
+            xstat_main();
+        }
+        else if (strcmp(buf, "calc") == 0) {
+            xcalc_main();
+        }
         else if (strcmp(buf, "help") == 0) {
-            kprint("Available commands:\n");
-            kprint("- ls: List all files\n");
-            kprint("- mkfile: Create a new file\n");
-            kprint("- rm: Remove a file\n");
-            kprint("- time: Show current time\n");
-            kprint("- clear: Clear screen\n");
-            kprint("- shutdown: Shutdown system\n");
-            kprint("- reboot: Reboot system\n");
-            kprint("- read: Read file content\n");
-            kprint("- write: Write content to file\n");
-            kprint("- ver: Show kernel version\n");
+            kprint("Available commands:\n\n");
+
+            kprint("- ls: List all files"); kprint("         -  write: Write content to file\n");
+            kprint("- mkfile: Create a new file"); kprint("  -  ver: Show kernel version\n");
+            kprint("- rm: Remove a file"); kprint("          -  edit: Edit a file with XEditor\n");
+            kprint("- time: Show current time"); kprint("    -  run: Run a script file with XRun\n");
+            kprint("- clear: Clear screen"); kprint("        -  stat: Show system status with XStat\n");
+            kprint("- shutdown: Shutdown system"); kprint("  -  calc: open calculator\n");
+            kprint("- reboot: Reboot system"); kprint("      -  read: Read file content\n");
         }
         else {
-            kprint("Unknown command");
+            kprint("Unknown command.\n");
         }
     }
 }
-
