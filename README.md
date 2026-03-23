@@ -4,16 +4,17 @@ A lightweight operating system project.
 
 ## Overview
 
-XOS 1.0 is a minimal operating system by xtechnologies.
+XOS 2.0 is a minimal operating system by xtechnologies.
 
 ## Features
 
 - minimal kernel functionality
 - file operation
 - minimal programs
+- minimal gui
 
 ### Building
 bash:
   ------------------------
-  make clean && make run
+  make clean && make build && make run
   ------------------------
