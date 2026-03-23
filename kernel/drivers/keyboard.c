@@ -1,5 +1,6 @@
 #include "gui.h"
 #include "io.h"
+#include "mouse.h"
 
 // Глобальний прапорець стану Shift
 static int shift_active = 0;
@@ -82,7 +83,14 @@ char get_char_from_scancode(unsigned char scancode) {
 void kinput(char* buffer) {
     int i = 0;
     while (1) {
-        if (!(inb(0x64) & 0x01)) continue; 
+        if (mouse_poll()) {
+            gui_draw_mouse(mouse_get_x(), mouse_get_y());
+        }
+        gui_draw_mouse(mouse_get_x(), mouse_get_y());
+
+        unsigned char status = inb(0x64);
+        if (!(status & 0x01)) continue;
+        if (status & 0x20) { inb(0x60); continue; } // drain mouse byte from shared 0x60 port
         unsigned char scancode = inb(0x60);
         
         char c = get_char_from_scancode(scancode);

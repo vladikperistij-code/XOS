@@ -21,8 +21,9 @@ BDIR = boot
 
 # Об'єктні файли (kernel.o має бути першим!)
 OBJ = $(BIN)/kernel.o $(BIN)/gui.o $(BIN)/time.o $(BIN)/keyboard.o \
-      $(BIN)/power.o $(BIN)/xfs.o $(BIN)/ata.o \
-      $(BIN)/xeditor.o $(BIN)/xrun.o $(BIN)/xstat.o $(BIN)/xcalc.o
+      $(BIN)/power.o $(BIN)/mouse.o $(BIN)/xfs.o $(BIN)/ata.o \
+      $(BIN)/xeditor.o $(BIN)/xrun.o $(BIN)/xstat.o $(BIN)/xcalc.o \
+      $(BIN)/xgui.o
 
 # Резервуємо 128 секторів (64КБ) для образу
 FULL_SIZE = 65536

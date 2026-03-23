@@ -1,42 +1,50 @@
 #include "xstat.h"
 #include "../kernel/gui.h"
 #include "../kernel/io.h"
+#include "../kernel/mouse.h"
 #include "../xfs/xfs.h"
 
 void xstat_main() {
     unsigned int esp_val;
-    // Отримуємо значення ESP максимально безпечно
-    __asm__ volatile("mov %%esp, %0" : "=r"(esp_val));
-
-    clear_screen();
-    kprint_color("=== XOS v1.2 SYSTEM MONITOR ===\n", 0x1F);
-    
-    kprint("\n[ MEMORY ]\n");
-    kprint("  Stack Base  : 0x90000\n");
-    kprint("  Current ESP : "); kprint_int((int)esp_val);
-    
-    // Розрахунок використання стеку
-    int used = 0x90000 - (int)esp_val;
-    kprint("\n  Stack Used  : "); kprint_int(used); kprint(" bytes\n");
-
-    kprint("\n[ STORAGE ]\n");
+    int used;
     int f_count = 0;
-    for (int i = 0; i < MAX_FILES; i++) {
+    int i;
+    unsigned char st;
+
+    __asm__ volatile("mov %%esp, %0" : "=r"(esp_val));
+    used = 0x90000 - (int)esp_val;
+
+    for (i = 0; i < MAX_FILES; i++) {
         if (filesystem[i].used) f_count++;
     }
-    kprint("  Files in XFS: "); kprint_int(f_count); kprint(" / 8\n");
 
-    kprint("\n[ HARDWARE ]\n");
-    unsigned char st = inb(0x1F7);
-    kprint("  Disk Status : ");
+    st = inb(0x1F7);
+
+    clear_screen();
+    gui_set_app_style('S', "System Monitor");
+    kprint_color("========================================\n", 0x0B);
+    kprint_color("   XStat 2.0  |  System Dashboard\n", 0x0F);
+    kprint_color("========================================\n\n", 0x0B);
+
+    kprint_color("[memory]\n", 0x0E);
+    kprint("stack base : 0x90000\n");
+    kprint("esp        : "); kprint_int((int)esp_val); kprint("\n");
+    kprint("stack used : "); kprint_int(used); kprint(" bytes\n\n");
+
+    kprint_color("[storage]\n", 0x0E);
+    kprint("files in xfs: "); kprint_int(f_count); kprint(" / 8\n\n");
+
+    kprint_color("[hardware]\n", 0x0E);
+    kprint("disk status : ");
     if (st == 0xFF) kprint_color("OFFLINE\n", 0x0C);
     else kprint_color("READY\n", 0x0A);
 
-    kprint("\nPress ESC to exit...");
+    kprint("\nPress ESC...");
     while (1) {
-        if (inb(0x64) & 0x01) {
-            if (inb(0x60) == 0x01) break; // Вихід по ESC
+        if (mouse_poll()) {
+            gui_draw_mouse(mouse_get_x(), mouse_get_y());
         }
+        gui_draw_mouse(mouse_get_x(), mouse_get_y());
+        { unsigned char st = inb(0x64); if ((st & 0x01) && !(st & 0x20) && inb(0x60) == 0x01) break; }
     }
-    clear_screen();
 }

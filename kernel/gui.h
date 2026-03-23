@@ -10,6 +10,11 @@ void clear_screen();
 void kprint(char* message);
 void kprint_color(char* message, int color);
 void print_char(char c);
+void kprint_int(int n);
+void kinput(char* buffer);
+char get_char_from_scancode(unsigned char scancode);
+void gui_set_app_style(char icon, char* title);
+void gui_draw_mouse(int x, int y);
 int strcmp(char* s1, char* s2);
 int strlen(char* s);
 

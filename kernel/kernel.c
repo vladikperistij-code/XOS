@@ -1,8 +1,10 @@
 #include "gui.h"
 #include "time.h"
+#include "mouse.h"
 #include "../xfs/xfs.h"
 #include "power.h"
 #include "../apps/xstat.h"
+#include "../apps/xgui.h"
 
 void main() {
     char buf[128];
@@ -10,9 +12,16 @@ void main() {
 
     xfs_init();
     xfs_load();
+    mouse_init();
 
     clear_screen();
+    gui_set_app_style('T', "Terminal");
     kprint_color("XOS Kernel v1.4 [XTechnologies]\n", 0x0E);
+    kprint_color("Launching XGUI...\n", 0x0A);
+    xgui_main();
+    clear_screen();
+    gui_set_app_style('T', "Terminal");
+    kprint_color("XGUI closed. Terminal ready.\n", 0x0E);
 
     while(1) {
         kprint_color("admin@xos >> ", 0x0C);
@@ -97,6 +106,9 @@ void main() {
         else if (strcmp(buf, "calc") == 0) {
             xcalc_main();
         }
+        else if (strcmp(buf, "xgui") == 0) {
+            xgui_main();
+        }
         else if (strcmp(buf, "help") == 0) {
             kprint("Available commands:\n\n");
 
@@ -107,6 +119,7 @@ void main() {
             kprint("- clear: Clear screen"); kprint("        -  stat: Show system status with XStat\n");
             kprint("- shutdown: Shutdown system"); kprint("  -  calc: open calculator\n");
             kprint("- reboot: Reboot system"); kprint("      -  read: Read file content\n");
+            kprint("- xgui: Open desktop shell GUI\n");
         }
         else {
             kprint("Unknown command.\n");
